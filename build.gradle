@@ -17,6 +17,7 @@ java {
 dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
     testImplementation 'org.hamcrest:hamcrest-library:2.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.withType(Test) {
@@ -31,3 +32,84 @@ application { //Allows  ./gradlew run --args=path-to-test-data
     mainClass = 'edu.odu.cs.MostCommonWords'
 }
 
+
+def pagesDir = file("${project.rootDir}/build/website-temp").absolutePath
+
+task clearPages(type: Delete) {
+    delete pagesDir
+}
+
+task workTreeAdd(type: Exec, dependsOn: ['clearPages']) { 
+    workingDir = '.'
+    commandLine = ['git', 'worktree', 'add', '-f', pagesDir, 'gh-pages']
+}
+
+task workTreeCheckout(type: Exec, dependsOn: ['workTreeAdd']) { 
+    workingDir = pagesDir
+    commandLine = ['git', 'checkout', 'gh-pages']
+}
+
+task workTree(type: Exec, dependsOn: ['workTreeCheckout']) { 
+    workingDir = pagesDir
+    commandLine = ['git', 'pull']
+}
+task copyReports (type: Copy, dependsOn: ['reports', 'workTree']) {
+    from 'build/reports'
+    into pagesDir
+}
+
+task copyReadMe (type: Copy, dependsOn: ['workTree']) {
+    from '../README.md'
+    into pagesDir
+}
+
+task copyWebsite (type: Copy, dependsOn: ['copyReports', 'copyReadMe']) {
+    from file('src/main/html')
+    into pagesDir
+}
+task stageWebsite (type: Exec, dependsOn: 'copyWebsite') {
+    workingDir = pagesDir
+    commandLine = ['git', 'add', pagesDir]
+    ignoreExitValue = true
+}
+
+task commitWebsite (type: Exec, dependsOn: 'stageWebsite') {
+    Date now = new Date()
+
+    workingDir = pagesDir
+    commandLine = ['git', 'commit', '-m', 'Updating webpages at ' + now.toString()]
+    ignoreExitValue = true
+}
+
+task pushWebsite (type: Exec, dependsOn: 'commitWebsite') {
+    workingDir = pagesDir
+    commandLine = ['git', 'push']
+    ignoreExitValue = true
+}
+
+task cleanWorkTree (type: Delete, dependsOn: 'pushWebsite') {
+    delete pagesDir
+}
+
+task deployReports (type: Exec, dependsOn: 'cleanWorkTree') {
+    group = "Reporting"
+    description  'Commit and push website changes to GitHub'
+    workingDir = '.'
+    commandLine = ['git', 'worktree', 'prune']
+}
+
+tasks.register("reports1",Copy)
+{   dependsOn(javadoc)
+    from("src/main/html/")
+    into("build/reports/")
+}
+
+tasks.register("reports2",Copy)
+{   
+    dependsOn(reports1,javadoc)
+    from("build/docs/")
+    into("build/reports/")
+}
+tasks.register("reports", Copy) {
+    dependsOn (build, reports1, reports2)
+}
