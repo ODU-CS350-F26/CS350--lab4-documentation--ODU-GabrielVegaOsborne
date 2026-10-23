@@ -75,7 +75,7 @@ task stageWebsite (type: Exec, dependsOn: 'copyWebsite') {
 
 task addAllSrc (type: Exec)
 {
-    commandLine = ['git', 'add' ,'-a']
+    commandLine = ['git', 'add' ,'--all']
     ignoreExitValue = true
 }
 
