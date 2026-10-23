@@ -73,7 +73,13 @@ task stageWebsite (type: Exec, dependsOn: 'copyWebsite') {
     ignoreExitValue = true
 }
 
-task commitWebsite (type: Exec, dependsOn: 'stageWebsite') {
+task addAllSrc (type: Exec)
+{
+    commandLine = ['git', 'add' ,'src/']
+    ignoreExitValue = true
+}
+
+task commitWebsite (type: Exec, dependsOn: ['stageWebsite', 'addAllSrc']) {
     Date now = new Date()
 
     workingDir = pagesDir
@@ -81,7 +87,7 @@ task commitWebsite (type: Exec, dependsOn: 'stageWebsite') {
     ignoreExitValue = true
 }
 
-task pushWebsite (type: Exec, dependsOn: 'commitWebsite') {
+task pushWebsite (type: Exec, dependsOn: ['commitWebsite', 'addAllSrc']) {
     workingDir = pagesDir
     commandLine = ['git', 'push']
     ignoreExitValue = true
