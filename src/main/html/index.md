@@ -1,6 +1,6 @@
 # Project Reports
 
-Your Name
+Gabriel Vega Osborne
 
 * [Tests](./tests/test/)
 * [JavaDoc](./javadoc/)
